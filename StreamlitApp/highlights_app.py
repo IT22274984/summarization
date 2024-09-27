@@ -4,6 +4,8 @@ import altair as alt
 import numpy as np
 from PIL import Image
 import nltk
+nltk.download('wordnet')
+
 from collections import Counter
 import heapq
 import re

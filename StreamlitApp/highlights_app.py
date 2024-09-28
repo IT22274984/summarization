@@ -6,7 +6,7 @@ from PIL import Image
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from transformers import pipeline
-from summarize import NewsSummarization
+from summarize import NewsSummarization, KeywordExtraction, TopicModeling
 
 # Download necessary NLTK resources
 nltk.download('wordnet')
@@ -40,8 +40,10 @@ with st.sidebar.form("input_form"):
 # Input article from the user
 article = st.text_area(label="Enter the article you want to summarize", height=300, value="Enter Article Body Here")
 
-# Instantiate NewsSummarization class for extractive summaries
+# Instantiate classes for summarization, keyword extraction, and topic modeling
 news_summarizer = NewsSummarization()
+keyword_extractor = KeywordExtraction()
+topic_modeler = TopicModeling()
 
 # Sentiment Analysis class
 class SentimentAnalysis:
@@ -70,6 +72,16 @@ if submit_button:
     st.write("## Sentiment Analysis")
     st.write(sentiment_scores)
 
+    # Perform keyword extraction
+    st.write("## Keyword Extraction")
+    keywords = keyword_extractor.extract_keywords(article, top_n=10)
+    st.write(keywords)
+
+    # Perform topic modeling
+    st.write("## Topic Modeling")
+    topics = topic_modeler.extract_topics(article, num_topics=3)
+    st.write(topics)
+
 # Sidebar information on summarization methods
 with st.sidebar.expander("More About Summarization"):
     st.markdown(""" 
@@ -77,7 +89,3 @@ with st.sidebar.expander("More About Summarization"):
     
     **Abstractive Summarization**: Generates a summary by interpreting the context and producing new sentences.
     """)
-
-# Example dataset to show results (optional)
-# df = pd.read_csv('dataset.csv')
-# st.write(df)

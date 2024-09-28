@@ -1,12 +1,14 @@
 import nltk
 import heapq
 import re
+import numpy as np
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize, sent_tokenize
 from transformers import pipeline
-
 from rouge_score import rouge_scorer
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+from sklearn.decomposition import LatentDirichletAllocation
 
 class Preprocess:
     def __init__(self):
@@ -43,6 +45,33 @@ class Preprocess:
         sentences = self.sentenceTokenize(text)
         return self.preprocess_sentences(sentences)
 
+
+class KeywordExtraction:
+    def extract_keywords(self, text, top_n=10):
+        '''Extracts top n keywords using TF-IDF'''
+        vectorizer = TfidfVectorizer(max_df=1.0, min_df=1, stop_words='english')  # Adjusted min_df
+        X = vectorizer.fit_transform([text])
+        feature_array = np.array(vectorizer.get_feature_names_out())
+        tfidf_sorting = np.argsort(X.toarray()).flatten()[::-1]
+
+        top_n_keywords = feature_array[tfidf_sorting][:top_n]
+        return top_n_keywords
+
+
+class TopicModeling:
+    def extract_topics(self, text, num_topics=3):
+        '''Performs topic modeling using LDA'''
+        vectorizer = CountVectorizer(max_df=1.0, min_df=1, stop_words='english')  # Adjusted min_df
+        X = vectorizer.fit_transform([text])
+        lda_model = LatentDirichletAllocation(n_components=num_topics, random_state=42)
+        lda_model.fit(X)
+
+        topics = {}
+        for i, topic in enumerate(lda_model.components_):
+            topics[f"Topic {i+1}"] = [vectorizer.get_feature_names_out()[index] for index in topic.argsort()[-10:]]
+        return topics
+
+
 class NewsSummarization:
     def __init__(self):
         pass
@@ -52,7 +81,7 @@ class NewsSummarization:
         preprocessor = Preprocess()
         tokenized_sentences = preprocessor.complete_preprocess(text)
         word_frequencies = {}
-        
+
         # Calculate word frequencies
         for sentence in tokenized_sentences:
             for word in sentence:
@@ -60,11 +89,11 @@ class NewsSummarization:
                     word_frequencies[word] = 1
                 else:
                     word_frequencies[word] += 1
-        
+
         maximum_frequency = max(word_frequencies.values())
         for word in word_frequencies:
             word_frequencies[word] = (word_frequencies[word] / maximum_frequency)
-        
+
         sentence_scores = {}
         sentence_list = sent_tokenize(text)
         for sent in sentence_list:
@@ -72,7 +101,7 @@ class NewsSummarization:
                 if word in word_frequencies:
                     if len(sent.split()) > sentence_len:
                         sentence_scores[sent] = sentence_scores.get(sent, 0) + word_frequencies[word]
-        
+
         summary_sentences = heapq.nlargest(num_sentences, sentence_scores, key=sentence_scores.get)
         summary = ' '.join(summary_sentences)
         return summary

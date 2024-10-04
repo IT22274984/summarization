@@ -11,7 +11,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.decomposition import LatentDirichletAllocation
 
 class Preprocess:
-    def __init__(self):
+    def _init_(self):
         pass
 
     def toLower(self, text):
@@ -73,7 +73,7 @@ class TopicModeling:
 
 
 class NewsSummarization:
-    def __init__(self):
+    def _init_(self):
         pass
 
     def extractive_summary(self, text, sentence_len=8, num_sentences=3):

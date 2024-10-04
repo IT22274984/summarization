@@ -12,80 +12,132 @@ from summarize import NewsSummarization, KeywordExtraction, TopicModeling
 nltk.download('wordnet')
 nltk.download('punkt')
 nltk.download('vader_lexicon')
+nltk.download('stopwords')
 
 # Load transformer model for abstractive summarization
 hub_model_id = "shivaniNK8/t5-small-finetuned-cnn-news"
-summarizer = pipeline("summarization", model=hub_model_id)
+summarizer = pipeline("summarization", model=hub_model_id, use_fast=False)
 
-# Page header
-st.write("""# HIGHLIGHTS! \n ### A News Summarizer""")
-st.write("Provide a news article and get a summary within seconds!")
+# Set page configuration for better responsiveness
+st.set_page_config(layout="wide")
 
-# Image for aesthetic purposes
-image = Image.open('newspaper.jpeg')
-st.image(image)
-
-# Sidebar for user input options
-st.sidebar.header('Select summary parameters')
-with st.sidebar.form("input_form"):
-    st.write('Select summary length for extractive summary:')
-    max_sentences = st.slider('Summary Length (Extractive)', 1, 10, step=1, value=3)
+# Inject custom CSS for background and theme color changes
+st.markdown(
+    """
+    <style>
+    /* Change overall background color */
+    .main {
+        background-color: #c8cce0;
+    }
     
-    st.write('Select word limits for abstractive summary:')
-    max_words = st.slider('Max words (Abstractive)', 50, 500, step=10, value=200)
-    min_words = st.slider('Min words (Abstractive)', 10, 450, step=10, value=100)
+    /* Change sidebar background color */
+    .css-1d391kg {
+        background-color: #FFFFFF;
+    }
     
-    submit_button = st.form_submit_button("Summarize!")
+    /* Style for buttons */
+    .stButton>button {
+        background-color: #4B8BBE;
+        color: white;
+        border-radius: 10px;
+        padding: 10px 20px;
+        border: none;
+    }
 
-# Input article from the user
-article = st.text_area(label="Enter the article you want to summarize", height=300, value="Enter Article Body Here")
+    /* Text area style */
+    .stTextArea>textarea {
+        background-color: #FFFFFF;
+        color: #333333;
+        border: 1px solid #D3D3D3;
+    }
 
-# Instantiate classes for summarization, keyword extraction, and topic modeling
-news_summarizer = NewsSummarization()
-keyword_extractor = KeywordExtraction()
-topic_modeler = TopicModeling()
+    /* Headings color */
+    h1, h2, h3 {
+        color: #4B8BBE;
+    }
 
-# Sentiment Analysis class
-class SentimentAnalysis:
-    def __init__(self):
-        self.sid = SentimentIntensityAnalyzer()
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-    def analyze_sentiment(self, text):
-        scores = self.sid.polarity_scores(text)
-        return scores
+# Define layout: left column (main content) and right column (user input options)
+left_col, right_col = st.columns([2.5, 1])
 
-if submit_button:
-    # Perform extractive summarization
-    st.write("## Extractive Summary")
-    ex_summary = news_summarizer.extractive_summary(article, num_sentences=max_sentences)
-    st.write(ex_summary)
+# Left side (main content)
+with left_col:
+    # Page header
+    st.write("""# HIGHLIGHTS! \n ### A News Summarizer""")
+    st.write("Provide a news article and get a summary within seconds!")
 
-    # Perform abstractive summarization using transformer model
-    summary = summarizer(article, max_length=max_words, min_length=min_words, do_sample=False, clean_up_tokenization_spaces=True)
-    abs_summary = summary[0]['summary_text']
-    st.write("## Abstractive Summary")
-    st.write(abs_summary)
+    # Image for aesthetic purposes with specified width
+    image = Image.open('C:\\Users\\shant\\OneDrive\\Desktop\\summerize\\News-Article-Text-Summarizer-Transformer-master\\StreamlitApp\\newspaper3.jpeg')
+    image = image.resize((500, 350))  # Resize image to width=450 and height=250
+    st.image(image)  # Only width is specified here
 
-    # Perform sentiment analysis
-    sentiment_analyzer = SentimentAnalysis()
-    sentiment_scores = sentiment_analyzer.analyze_sentiment(article)
-    st.write("## Sentiment Analysis")
-    st.write(sentiment_scores)
+    # Input article from the user
+    article = st.text_area(label="Enter the article you want to summarize", height=250, placeholder="Enter Article Body Here")
 
-    # Perform keyword extraction
-    st.write("## Keyword Extraction")
-    keywords = keyword_extractor.extract_keywords(article, top_n=10)
-    st.write(keywords)
+    # Sentiment Analysis class
+    class SentimentAnalysis:
+        def __init__(self):
+            self.sid = SentimentIntensityAnalyzer()
 
-    # Perform topic modeling
-    st.write("## Topic Modeling")
-    topics = topic_modeler.extract_topics(article, num_topics=3)
-    st.write(topics)
+        def analyze_sentiment(self, text):
+            scores = self.sid.polarity_scores(text)
+            return scores
 
-# Sidebar information on summarization methods
-with st.sidebar.expander("More About Summarization"):
-    st.markdown(""" 
-    **Extractive Summarization**: Identifies and selects important sentences from the article.
-    
-    **Abstractive Summarization**: Generates a summary by interpreting the context and producing new sentences.
-    """)
+    # Instantiate classes for summarization, keyword extraction, and topic modeling
+    news_summarizer = NewsSummarization()
+    keyword_extractor = KeywordExtraction()
+    topic_modeler = TopicModeling()
+
+    # Perform summarization and analysis if the button is clicked
+    if st.session_state.get('submitted', False):
+        # Perform extractive summarization
+        st.write("## Extractive Summary")
+        ex_summary = news_summarizer.extractive_summary(article, num_sentences=st.session_state.max_sentences)
+        st.write(ex_summary)
+
+        # Perform abstractive summarization using transformer model
+        summary = summarizer(article, max_length=st.session_state.max_words, min_length=st.session_state.min_words, do_sample=False, clean_up_tokenization_spaces=True)
+        abs_summary = summary[0]['summary_text']
+        st.write("## Abstractive Summary")
+        st.write(abs_summary)
+
+        # Perform sentiment analysis
+        sentiment_analyzer = SentimentAnalysis()
+        sentiment_scores = sentiment_analyzer.analyze_sentiment(article)
+        st.write("## Sentiment Analysis")
+        st.write(sentiment_scores)
+
+        # Perform keyword extraction
+        st.write("## Keyword Extraction")
+        keywords = keyword_extractor.extract_keywords(article, top_n=10)
+        st.write(keywords)
+
+        # Perform topic modeling
+        st.write("## Topic Modeling")
+        topics = topic_modeler.extract_topics(article, num_topics=5)
+        st.write(topics)
+
+# Right side (user input options)
+with right_col:
+    st.markdown("### Summary Options")
+    st.write("Set parameters for summarization:")
+
+    # Max sentences and words inputs in a more professional way
+    max_sentences = st.number_input('Summary Length (Extractive)', min_value=1, max_value=10, value=3, key="max_sentences")
+    max_words = st.number_input('Max words (Abstractive)', min_value=50, max_value=500, step=10, value=200, key="max_words")
+    min_words = st.number_input('Min words (Abstractive)', min_value=10, max_value=450, step=10, value=100, key="min_words")
+
+    # Submit button
+    submit_button = st.button("Summarize!", key="submitted")
+
+    # Sidebar information on summarization methods (now placed under the button)
+    with st.expander("More About Summarization"):
+        st.markdown(""" 
+        *Extractive Summarization*: Identifies and selects important sentences from the article.
+        
+        *Abstractive Summarization*: Generates a summary by interpreting the context and producing new sentences.
+        """)

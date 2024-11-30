@@ -2,8 +2,11 @@
 
 
 End-to-End News Summarization and Analysis System
+
 End-to-End News Summarization and Analysis System
+
 Aug 2024 - Oct 2024Aug 2024 - Oct 2024
+
 🌟 Project Overview
 In today’s fast-paced digital landscape, the overwhelming volume of news articles calls for efficient summarization and analysis solutions. As part of this project, I developed an End-to-End News Summarization and Analysis System using advanced Natural Language Processing (NLP), Large Language Model (LLM) techniques. This system aims to simplify information consumption by generating concise summaries and providing insightful analysis of news content.
 
